@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Urgency Triage Scorecard</title>
+<style>
+  :root {
+    --slate-dark: #1c222d;
+    --slate: #2a3342;
+    --card: #262e3d;
+    --card-border: #384358;
+    --light: #e9ecf2;
+    --light-mid: #a9b2c3;
+    --amber: #d99e2b;
+    --amber-dim: #7a5c1f;
+    --red: #c25c53;
+    --red-bg: #3a2523;
+    --amber-bg: #3a3123;
+    --green: #4f9c76;
+    --green-bg: #223229;
+    --gray: #8a93a3;
+    --gray-bg: #2b303a;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--slate-dark);
+    color: var(--light);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Calibri, Arial, sans-serif;
+    min-height: 100vh;
+  }
+  .wrap {
+    max-width: 640px;
+    margin: 0 auto;
+    padding: 28px 20px 60px;
+  }
+  .eyebrow {
+    font-size: 12px;
+    letter-spacing: 2.5px;
+    color: var(--amber);
+    font-weight: 700;
+    margin-bottom: 10px;
+  }
+  h1 {
+    font-family: Cambria, "Times New Roman", serif;
+    font-size: 28px;
+    line-height: 1.2;
+    margin: 0 0 8px;
+  }
+  .sub {
+    color: var(--light-mid);
+    font-size: 14.5px;
+    line-height: 1.5;
+    margin: 0 0 24px;
+  }
+
+  .score-bar {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background: rgba(28, 34, 45, 0.94);
+    backdrop-filter: blur(6px);
+    padding: 14px 0 12px;
+    margin-bottom: 8px;
+    border-bottom: 1px solid var(--card-border);
+  }
+  .score-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+  .score-num {
+    font-family: Cambria, serif;
+    font-size: 34px;
+    font-weight: 700;
+    line-height: 1;
+    min-width: 64px;
+  }
+  .score-label {
+    font-size: 11px;
+    color: var(--light-mid);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+  .track {
+    flex: 1;
+    height: 8px;
+    background: var(--slate);
+    border-radius: 5px;
+    overflow: hidden;
+  }
+  .fill {
+    height: 100%;
+    border-radius: 5px;
+    background: var(--amber);
+    width: 0%;
+    transition: width 0.25s ease, background 0.25s ease;
+  }
+
+  .tier-panel {
+    border-radius: 14px;
+    padding: 18px 18px;
+    margin: 14px 0 26px;
+    border: 1px solid var(--card-border);
+    transition: background 0.25s ease, border-color 0.25s ease;
+  }
+  .tier-name {
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+  .tier-title {
+    font-family: Cambria, serif;
+    font-size: 19px;
+    font-weight: 700;
+    margin-bottom: 8px;
+  }
+  .tier-action {
+    font-size: 13.5px;
+    line-height: 1.55;
+    color: var(--light);
+  }
+
+  .checklist {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .item {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    background: var(--card);
+    border: 1px solid var(--card-border);
+    border-radius: 10px;
+    padding: 13px 14px;
+    cursor: pointer;
+    transition: border-color 0.15s ease, background 0.15s ease;
+  }
+  .item:active { transform: scale(0.997); }
+  .item.checked {
+    border-color: var(--amber-dim);
+    background: #2c2a1f;
+  }
+  .box {
+    flex-shrink: 0;
+    width: 22px;
+    height: 22px;
+    border-radius: 6px;
+    border: 2px solid var(--light-mid);
+    margin-top: 1px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s ease;
+  }
+  .item.checked .box {
+    background: var(--amber);
+    border-color: var(--amber);
+  }
+  .box svg { display: none; width: 13px; height: 13px; }
+  .item.checked .box svg { display: block; }
+  .item-text { font-size: 14px; line-height: 1.4; }
+  .item-text b { color: var(--light); }
+
+  .legend {
+    margin-top: 30px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+  .leg-card {
+    border-radius: 10px;
+    padding: 12px 13px;
+    border: 1px solid var(--card-border);
+  }
+  .leg-range { font-size: 11px; color: var(--light-mid); letter-spacing: 0.5px; }
+  .leg-title { font-size: 13.5px; font-weight: 700; margin-top: 2px; }
+
+  .reset {
+    margin-top: 26px;
+    width: 100%;
+    background: transparent;
+    border: 1px solid var(--card-border);
+    color: var(--light-mid);
+    padding: 12px;
+    border-radius: 10px;
+    font-size: 13px;
+    cursor: pointer;
+  }
+  .reset:active { background: var(--slate); }
+
+  .footer-note {
+    margin-top: 22px;
+    font-size: 12px;
+    color: var(--light-mid);
+    line-height: 1.5;
+    border-top: 1px solid var(--card-border);
+    padding-top: 16px;
+  }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="eyebrow">EA OPERATIONAL PLAYBOOK</div>
+    <h1>Urgency Triage Scorecard</h1>
+    <p class="sub">When multiple things land at once labeled "urgent," check what's actually true for each one. The count decides the tier — not the sender's tone.</p>
+
+    <div class="score-bar">
+      <div class="score-row">
+        <div>
+          <div class="score-num" id="scoreNum">0</div>
+          <div class="score-label">of 10 checked</div>
+        </div>
+        <div class="track"><div class="fill" id="fill"></div></div>
+      </div>
+    </div>
+
+    <div class="tier-panel" id="tierPanel">
+      <div class="tier-name" id="tierName">DEFER / FILE</div>
+      <div class="tier-title" id="tierTitle">No same-day action needed</div>
+      <div class="tier-action" id="tierAction">Check the boxes that are true for this item. Nothing checked yet means nothing here is actually time-critical — file it and move on.</div>
+    </div>
+
+    <div class="checklist" id="checklist"></div>
+
+    <div class="legend">
+      <div class="leg-card" style="border-color:#5c3230;">
+        <div class="leg-range">8&ndash;10 CHECKED</div>
+        <div class="leg-title" style="color:#e08278;">Now</div>
+      </div>
+      <div class="leg-card" style="border-color:#5c4b25;">
+        <div class="leg-range">5&ndash;7 CHECKED</div>
+        <div class="leg-title" style="color:#e0b854;">Today, Batched</div>
+      </div>
+      <div class="leg-card" style="border-color:#2f4c3d;">
+        <div class="leg-range">2&ndash;4 CHECKED</div>
+        <div class="leg-title" style="color:#6fc39d;">Handle or Delegate</div>
+      </div>
+      <div class="leg-card" style="border-color:#3d4453;">
+        <div class="leg-range">0&ndash;1 CHECKED</div>
+        <div class="leg-title" style="color:#a9b2c3;">Defer / File</div>
+      </div>
+    </div>
+
+    <button class="reset" id="resetBtn">Reset for the next item</button>
+
+    <div class="footer-note">
+      Run this once per incoming item, not once for the whole pile. Five "urgent" emails might score a 9, a 6, a 3, a 1, and a 7 &mdash; that spread is the point. Bundle everything that lands in the same tier before you go to the CEO.
+    </div>
+  </div>
+
+<script>
+  const items = [
+    { t: "Has a hard deadline within the next hour", h: "not \u201cASAP\u201d \u2014 an actual clock" },
+    { t: "Involves a board member, investor, or legal matter", h: "" },
+    { t: "Someone else is actively blocked, waiting on this right now", h: "" },
+    { t: "Real financial or reputational risk if it waits", h: "not just discomfort" },
+    { t: "No one else can make this call or handle it", h: "you've checked \u2014 truly no delegate" },
+    { t: "Requires the CEO's unique decision or presence", h: "" },
+    { t: "Can't be undone or fixed later if ignored now", h: "" },
+    { t: "Involves an external, stakeholder-facing commitment", h: "client, press, partner" },
+    { t: "Requires information only the CEO has", h: "" },
+    { t: "Flagged urgent with a specific reason, not just habit", h: "" },
+  ];
+
+  const checklistEl = document.getElementById("checklist");
+  const state = new Array(items.length).fill(false);
+
+  const checkSvg = '<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M4 12L9.5 17.5L20 6" stroke="#1c222d" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+
+  items.forEach((item, i) => {
+    const row = document.createElement("div");
+    row.className = "item";
+    row.id = "item-" + i;
+    row.innerHTML = `
+      <div class="box">${checkSvg}</div>
+      <div class="item-text"><b>${item.t}</b>${item.h ? " &mdash; " + item.h : ""}</div>
+    `;
+    row.addEventListener("click", () => {
+      state[i] = !state[i];
+      row.classList.toggle("checked", state[i]);
+      update();
+    });
+    checklistEl.appendChild(row);
+  });
+
+  const scoreNum = document.getElementById("scoreNum");
+  const fill = document.getElementById("fill");
+  const tierPanel = document.getElementById("tierPanel");
+  const tierName = document.getElementById("tierName");
+  const tierTitle = document.getElementById("tierTitle");
+  const tierAction = document.getElementById("tierAction");
+
+  function update() {
+    const score = state.filter(Boolean).length;
+    scoreNum.textContent = score;
+    fill.style.width = (score / 10 * 100) + "%";
+
+    let tier;
+    if (score >= 8) tier = "now";
+    else if (score >= 5) tier = "today";
+    else if (score >= 2) tier = "handle";
+    else tier = "defer";
+
+    const config = {
+      now: {
+        color: "#c25c53", bg: "#3a2523",
+        name: "NOW", title: "Interrupt immediately",
+        action: "Go to the CEO directly with one clear ask, not a data dump. State the situation in one sentence and the decision you need \u2014 don't make them read the whole thread."
+      },
+      today: {
+        color: "#d99e2b", bg: "#3a3123",
+        name: "TODAY, BATCHED", title: "Resolve within a couple hours",
+        action: "Don't interrupt right now. Add it to the next natural check-in and bundle it with anything else in this tier so the CEO makes one decision, not five."
+      },
+      handle: {
+        color: "#4f9c76", bg: "#223229",
+        name: "HANDLE OR DELEGATE", title: "You likely own this one",
+        action: "Make the call yourself if it's covered by a known preference or precedent. If it's outside your authority, hand it to the right person on the team \u2014 it doesn't need the CEO."
+      },
+      defer: {
+        color: "#8a93a3", bg: "#2b303a",
+        name: "DEFER / FILE", title: "No same-day action needed",
+        action: "File it, snooze it, or send a short acknowledgment. Nothing checked means nothing here is actually time-critical, whatever the subject line says."
+      },
+    };
+
+    const c = config[tier];
+    tierPanel.style.borderColor = c.color;
+    tierPanel.style.background = c.bg;
+    tierName.style.color = c.color;
+    tierName.textContent = c.name;
+    tierTitle.textContent = c.title;
+    tierAction.textContent = c.action;
+    fill.style.background = c.color;
+  }
+
+  document.getElementById("resetBtn").addEventListener("click", () => {
+    state.fill(false);
+    items.forEach((_, i) => document.getElementById("item-" + i).classList.remove("checked"));
+    update();
+  });
+
+  update();
+</script>
+</body>
+</html>
